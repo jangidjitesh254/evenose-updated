@@ -34,7 +34,10 @@ const {
   exportTeamsToCSV,
   addNoteToTeam,
   getTeamNotes,
-  checkAutoApproval
+  checkAutoApproval,
+  organizerAddMember,
+  organizerRemoveMember,
+  organizerDeleteTeam
 } = require('../controllers/team.controller');
 const { protect, isCoordinator, isJudge, checkCoordinatorPermission, authorize } = require('../middleware/auth');
 const { upload, configureUploadLimits } = require('../middleware/upload');
@@ -75,6 +78,11 @@ router.post('/:teamId/reject', protect, rejectTeam);
 router.post('/hackathon/:hackathonId/bulk-approve', protect, bulkApproveTeams);
 router.post('/hackathon/:hackathonId/bulk-reject', protect, bulkRejectTeams);
 router.get('/hackathon/:hackathonId/export', protect, exportTeamsToCSV);
+
+// Organizer routes for team management
+router.post('/:teamId/organizer/add-member', protect, organizerAddMember);
+router.delete('/:teamId/organizer/remove-member/:memberId', protect, organizerRemoveMember);
+router.delete('/:teamId/organizer/delete', protect, organizerDeleteTeam);
 
 // Auto-approval
 router.post('/:teamId/check-auto-approval', protect, checkAutoApproval);

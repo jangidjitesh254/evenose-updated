@@ -2335,4 +2335,238 @@ exports.checkAutoApproval = async (req, res) => {
   }
 };
 
+// @desc    Add member to team (Organizer)
+// @route   POST /api/teams/:teamId/organizer/add-member
+// @access  Private (Organizer)
+exports.organizerAddMember = async (req, res) => {
+  try {
+    const { teamId } = req.params;
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required'
+      });
+    }
+
+    const team = await Team.findById(teamId).populate('hackathon');
+    if (!team) {
+      return res.status(404).json({
+        success: false,
+        message: 'Team not found'
+      });
+    }
+
+    // Check if user is organizer
+    const isOrganizer = team.hackathon.organizer.toString() === req.user._id.toString();
+    const isAdmin = req.user.hasAnyRole(['admin', 'super_admin']);
+
+    if (!isOrganizer && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only hackathon organizers can add members to teams'
+      });
+    }
+
+    // Check if user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Check if user is a coordinator for this hackathon
+    if (user.isCoordinatorFor(team.hackathon._id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Coordinators cannot participate in the hackathon'
+      });
+    }
+
+    // Check if user is already in another team for this hackathon
+    const existingTeam = await Team.findOne({
+      hackathon: team.hackathon._id,
+      'members.user': userId,
+      'members.status': 'active'
+    });
+
+    if (existingTeam && existingTeam._id.toString() !== teamId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User is already in another team for this hackathon'
+      });
+    }
+
+    // Check if team is full
+    const activeMembers = team.members.filter(m => m.status === 'active');
+    if (activeMembers.length >= team.hackathon.teamConfig.maxMembers) {
+      return res.status(400).json({
+        success: false,
+        message: `Team is full (maximum ${team.hackathon.teamConfig.maxMembers} members)`
+      });
+    }
+
+    // Check if user already exists in this team (might be removed/left)
+    const existingMemberIndex = team.members.findIndex(
+      m => m.user.toString() === userId
+    );
+
+    if (existingMemberIndex !== -1) {
+      // Reactivate if they were removed/left
+      team.members[existingMemberIndex].status = 'active';
+      team.members[existingMemberIndex].role = 'member';
+      team.members[existingMemberIndex].joinedAt = new Date();
+    } else {
+      // Add as new member
+      team.members.push({
+        user: userId,
+        role: 'member',
+        status: 'active',
+        joinedAt: new Date()
+      });
+    }
+
+    await team.save();
+
+    // Populate the team for response
+    await team.populate('members.user', 'fullName email username');
+    await team.populate('leader', 'fullName email username');
+
+    res.status(200).json({
+      success: true,
+      message: 'Member added successfully',
+      team
+    });
+  } catch (error) {
+    console.error('organizerAddMember error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// @desc    Remove member from team (Organizer)
+// @route   DELETE /api/teams/:teamId/organizer/remove-member/:memberId
+// @access  Private (Organizer)
+exports.organizerRemoveMember = async (req, res) => {
+  try {
+    const { teamId, memberId } = req.params;
+
+    const team = await Team.findById(teamId).populate('hackathon');
+    if (!team) {
+      return res.status(404).json({
+        success: false,
+        message: 'Team not found'
+      });
+    }
+
+    // Check if user is organizer
+    const isOrganizer = team.hackathon.organizer.toString() === req.user._id.toString();
+    const isAdmin = req.user.hasAnyRole(['admin', 'super_admin']);
+
+    if (!isOrganizer && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only hackathon organizers can remove members from teams'
+      });
+    }
+
+    // Find the member
+    const memberIndex = team.members.findIndex(
+      m => m._id.toString() === memberId && m.status === 'active'
+    );
+
+    if (memberIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Active member not found in team'
+      });
+    }
+
+    // Check if trying to remove the team leader
+    if (team.members[memberIndex].role === 'leader') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot remove team leader. Please delete the entire team instead.'
+      });
+    }
+
+    // Mark member as removed
+    team.members[memberIndex].status = 'removed';
+    await team.save();
+
+    // Populate the team for response
+    await team.populate('members.user', 'fullName email username');
+    await team.populate('leader', 'fullName email username');
+
+    res.status(200).json({
+      success: true,
+      message: 'Member removed successfully',
+      team
+    });
+  } catch (error) {
+    console.error('organizerRemoveMember error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// @desc    Delete team (Organizer)
+// @route   DELETE /api/teams/:teamId/organizer/delete
+// @access  Private (Organizer)
+exports.organizerDeleteTeam = async (req, res) => {
+  try {
+    const { teamId } = req.params;
+
+    const team = await Team.findById(teamId).populate('hackathon');
+    if (!team) {
+      return res.status(404).json({
+        success: false,
+        message: 'Team not found'
+      });
+    }
+
+    // Check if user is organizer
+    const isOrganizer = team.hackathon.organizer.toString() === req.user._id.toString();
+    const isAdmin = req.user.hasAnyRole(['admin', 'super_admin']);
+
+    if (!isOrganizer && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only hackathon organizers can delete teams'
+      });
+    }
+
+    // Delete all join requests for this team
+    await JoinRequest.deleteMany({ team: teamId });
+
+    // Delete the team
+    await Team.findByIdAndDelete(teamId);
+
+    // Update hackathon registration count
+    const hackathon = await Hackathon.findById(team.hackathon._id);
+    if (hackathon && hackathon.currentRegistrations > 0) {
+      hackathon.currentRegistrations -= 1;
+      await hackathon.save();
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Team deleted successfully'
+    });
+  } catch (error) {
+    console.error('organizerDeleteTeam error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 module.exports = exports;

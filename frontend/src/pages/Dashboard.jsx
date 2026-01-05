@@ -29,20 +29,10 @@ export default function StudentDashboard() {
     pendingRequests: 0,
   });
   const [pendingInvitations, setPendingInvitations] = useState(0);
-  const isCoordinator = user?.coordinatorFor?.some(
+  const [freshUser, setFreshUser] = useState(null);
+  const isCoordinator = freshUser?.coordinatorFor?.some(
     (c) => c.status === "accepted"
   );
-
-  useEffect(() => {
-  // Fetch user data
-  authAPI.getMe().then(res => {
-    const pending = res.data.user.coordinatorFor?.filter(
-      c => c.status === 'pending'
-    ) || [];
-    setPendingInvitations(pending.length);
-  });
-}, []);
-
 
   useEffect(() => {
     fetchDashboardData();
@@ -50,20 +40,33 @@ export default function StudentDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const [teamsRes, requestsRes] = await Promise.all([
+      const [teamsRes, requestsRes, userRes] = await Promise.all([
         teamAPI.getMyTeams(),
-        teamAPI.getMyJoinRequests().catch(() => ({ data: { joinRequests: [] } }))
+        teamAPI.getMyJoinRequests().catch(() => ({ data: { joinRequests: [] } })),
+        authAPI.getMe()
       ]);
+
+      // Update fresh user data
+      setFreshUser(userRes.data.user);
 
       setMyTeams(teamsRes.data.teams);
       setRemovedTeams(teamsRes.data.removedTeams || []);
       setJoinRequests(requestsRes.data.joinRequests || []);
 
+      // Count accepted coordinator roles from fresh user data
+      const coordinatingCount = userRes.data.user.coordinatorFor?.filter(
+        (c) => c.status === "accepted"
+      ).length || 0;
+
+      // Count pending coordinator invitations
+      const pending = userRes.data.user.coordinatorFor?.filter(
+        c => c.status === 'pending'
+      ) || [];
+      setPendingInvitations(pending.length);
+
       setStats({
         participating: teamsRes.data.teams.length,
-        coordinating: isCoordinator
-          ? user.coordinatorFor.filter((c) => c.status === "accepted").length
-          : 0,
+        coordinating: coordinatingCount,
         pendingRequests: requestsRes.data.joinRequests?.length || 0,
       });
     } catch (error) {

@@ -23,6 +23,8 @@ import {
   Target,
   Edit,
   X,
+  Table as TableIcon,
+  Hash,
 } from 'lucide-react';
 import { teamAPI } from '../services/api';
 import { useAuthStore } from '../store';
@@ -393,6 +395,42 @@ export default function TeamDetail() {
               </div>
             </div>
 
+            {/* Check-in Status Alert */}
+            {team.checkIn?.isCheckedIn && (team.tableNumber || team.teamNumber) && (
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-2xl p-5 mb-4">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-green-100 rounded-xl">
+                    <CheckCircle2 className="w-6 h-6 text-green-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-green-900 mb-2">You're All Set!</h3>
+                    <p className="text-sm text-green-800 mb-3">
+                      Your team has been checked in successfully. Here are your assigned details:
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {team.tableNumber && (
+                        <div className="bg-white rounded-xl p-3 border border-green-200">
+                          <p className="text-xs text-gray-600 font-semibold mb-1">Table Number</p>
+                          <p className="text-2xl font-bold text-green-700">#{team.tableNumber}</p>
+                        </div>
+                      )}
+                      {team.teamNumber && (
+                        <div className="bg-white rounded-xl p-3 border border-green-200">
+                          <p className="text-xs text-gray-600 font-semibold mb-1">Team Number</p>
+                          <p className="text-2xl font-bold text-green-700">#{team.teamNumber}</p>
+                        </div>
+                      )}
+                    </div>
+                    {team.checkIn?.checkedInAt && (
+                      <p className="text-xs text-green-700 mt-3">
+                        Checked in on {format(new Date(team.checkIn.checkedInAt), 'MMM dd, yyyy • HH:mm')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Team Status Message */}
             {(() => {
               const statusInfo = getTeamStatusMessage();
@@ -607,53 +645,11 @@ export default function TeamDetail() {
                     </>
                   )}
                 </div>
-                
-                {/* Action Buttons Below Members List */}
-                <div className="mt-6 pt-6 border-t border-gray-200 space-y-3">
-                  {isTeamLead() && (
-                    <button
-                      onClick={() => setShowInviteModal(true)}
-                      className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2"
-                    >
-                      <Search className="w-5 h-5" />
-                      Search & Invite Users
-                    </button>
-                  )}
-                  {!isTeamLead() && team.members?.some(m => (m.user?._id === user?.id || m.user === user?.id) && m.status === 'active') && (
-                    <button
-                      onClick={handleLeaveTeam}
-                      className="w-full px-6 py-3 border-2 border-red-300 text-red-600 rounded-xl font-semibold hover:bg-red-50 transition-all flex items-center justify-center gap-2"
-                    >
-                      <UserMinus className="w-5 h-5" />
-                      Leave Team
-                    </button>
-                  )}
-                </div>
               </div>
             </div>
 
             {/* Sidebar */}
             <div className="space-y-6">
-              {/* Send Request Card */}
-              {isTeamLead() && (
-                <div className="bg-white rounded-3xl shadow-lg p-6 border-2 border-gray-100">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <UserPlus className="w-5 h-5 text-purple-600" />
-                    Invite Members
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Search for students and send them invitations to join your team
-                  </p>
-                  <button
-                    onClick={() => setShowInviteModal(true)}
-                    className="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2"
-                  >
-                    <Search className="w-5 h-5" />
-                    Search & Invite Users
-                  </button>
-                </div>
-               )}
-
               <div className="bg-white rounded-3xl shadow-lg p-6 border-2 border-gray-100">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <Target className="w-5 h-5 text-purple-600" />
@@ -664,18 +660,51 @@ export default function TeamDetail() {
                     <span className="text-gray-600 block mb-1">Project</span>
                     <p className="font-semibold text-gray-900">{team.projectTitle || 'Not specified'}</p>
                   </div>
-                  <div className="p-3 bg-gray-50 rounded-xl">
-                    <span className="text-gray-600 block mb-1">Table Number</span>
-                    <p className="font-semibold text-gray-900">{team.tableNumber || 'Not assigned'}</p>
+
+                  {/* Highlighted Table Number */}
+                  <div className={`p-4 rounded-xl border-2 ${
+                    team.tableNumber
+                      ? 'bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-300'
+                      : 'bg-gray-50 border-gray-200'
+                  }`}>
+                    <span className="text-gray-600 block mb-2 font-semibold">Table Number</span>
+                    {team.tableNumber ? (
+                      <div className="flex items-center gap-2">
+                        <TableIcon className="w-5 h-5 text-blue-600" />
+                        <p className="text-2xl font-bold text-blue-700">#{team.tableNumber}</p>
+                      </div>
+                    ) : (
+                      <p className="font-semibold text-gray-500 flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        Not assigned
+                      </p>
+                    )}
                   </div>
-                  <div className="p-3 bg-gray-50 rounded-xl">
-                    <span className="text-gray-600 block mb-1">Team Number</span>
-                    <p className="font-semibold text-gray-900">{team.teamNumber || 'Not assigned'}</p>
+
+                  {/* Highlighted Team Number */}
+                  <div className={`p-4 rounded-xl border-2 ${
+                    team.teamNumber
+                      ? 'bg-gradient-to-br from-purple-50 to-pink-50 border-purple-300'
+                      : 'bg-gray-50 border-gray-200'
+                  }`}>
+                    <span className="text-gray-600 block mb-2 font-semibold">Team Number</span>
+                    {team.teamNumber ? (
+                      <div className="flex items-center gap-2">
+                        <Hash className="w-5 h-5 text-purple-600" />
+                        <p className="text-2xl font-bold text-purple-700">#{team.teamNumber}</p>
+                      </div>
+                    ) : (
+                      <p className="font-semibold text-gray-500 flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        Not assigned
+                      </p>
+                    )}
                   </div>
+
                   <div className="p-3 bg-gray-50 rounded-xl">
                     <span className="text-gray-600 block mb-1">Payment Status</span>
                     <span className={`inline-block px-3 py-1 rounded-lg font-semibold ${
-                      team.payment?.status === 'completed' 
+                      team.payment?.status === 'completed'
                         ? 'bg-green-100 text-green-700'
                         : 'bg-yellow-100 text-yellow-700'
                     }`}>

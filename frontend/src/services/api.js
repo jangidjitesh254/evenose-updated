@@ -92,7 +92,9 @@ export const hackathonAPI = {
   removeCoordinator: (id, userId) => api.delete(`/hackathons/${id}/coordinators/${userId}`),
   cancelCoordinatorInvite: (id, userId) => api.delete(`/hackathons/${id}/coordinators/${userId}/cancel`),
   resendCoordinatorInvite: (id, userId) => api.post(`/hackathons/${id}/coordinators/${userId}/resend`),
-  acceptCoordinatorInvitation: (hackathonId) => api.post(`/hackathons/coordinators/accept`, { hackathonId }),
+  getCoordinatorInvitations: () => api.get('/hackathons/coordinators/invitations'),
+  acceptCoordinatorInvitation: (invitationId, data) => api.post(`/hackathons/coordinators/invitations/${invitationId}/accept`, data),
+  declineCoordinatorInvitation: (invitationId) => api.post(`/hackathons/coordinators/invitations/${invitationId}/decline`),
   searchCoordinators: (id, query) => api.get(`/hackathons/${id}/search-coordinators?query=${encodeURIComponent(query)}`),
 
   // Rounds management
@@ -134,6 +136,11 @@ export const teamAPI = {
   addMember: (id, data) => api.post(`/teams/${id}/members`, data),
   removeMember: (id, userId) => api.delete(`/teams/${id}/members/${userId}`),
   leaveTeam: (id) => api.post(`/teams/${id}/leave`),
+
+  // Organizer team management
+  organizerAddMember: (teamId, data) => api.post(`/teams/${teamId}/organizer/add-member`, data),
+  organizerRemoveMember: (teamId, memberId) => api.delete(`/teams/${teamId}/organizer/remove-member/${memberId}`),
+  organizerDeleteTeam: (teamId) => api.delete(`/teams/${teamId}/organizer/delete`),
 
   // Join requests
   getJoinRequests: (teamId) => api.get(`/teams/${teamId}/join-requests`),

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Search, Download, UserCheck, Hash, ArrowLeft, Users, CheckCircle, Clock, BarChart3, Table as TableIcon } from 'lucide-react';
+import { Search, Download, UserCheck, Hash, ArrowLeft, Users, CheckCircle, Clock, BarChart3, Table as TableIcon, Shield } from 'lucide-react';
 import { hackathonAPI, teamAPI } from '../services/api';
 import { useAuthStore } from '../store';
 import Card from '../components/ui/Card';
@@ -273,7 +273,7 @@ export default function CoordinatorDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
@@ -285,73 +285,92 @@ export default function CoordinatorDashboard() {
           >
             Back to Coordinations
           </Button>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
             {hackathon?.title}
           </h1>
-          <p className="text-gray-600">Team Management Dashboard</p>
+          <p className="text-gray-600 flex items-center gap-2">
+            <Shield className="w-4 h-4" />
+            Coordinator Dashboard - Team Management
+          </p>
         </div>
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          <Card noTransform={true}>
+          <div className="bg-white rounded-3xl shadow-lg p-6 border-2 border-gray-100 hover:shadow-xl transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Teams</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.totalTeams}</p>
+                <p className="text-sm font-semibold text-gray-600">Total Teams</p>
+                <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mt-1">{stats.totalTeams}</p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {stats.approvedTeams} approved, {stats.pendingTeams} pending
+                  <span className="text-green-600 font-semibold">{stats.approvedTeams} approved</span>, {stats.pendingTeams} pending
                 </p>
               </div>
-              <div className="p-3 bg-indigo-100 rounded-lg">
-                <Users className="w-6 h-6 text-indigo-600" />
+              <div className="p-4 bg-gradient-to-br from-purple-100 to-blue-100 rounded-2xl">
+                <Users className="w-7 h-7 text-purple-600" />
               </div>
             </div>
-          </Card>
+          </div>
 
-          <Card noTransform={true}>
+          <div className="bg-white rounded-3xl shadow-lg p-6 border-2 border-gray-100 hover:shadow-xl transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Team Check-ins</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.checkedInTeams}</p>
+                <p className="text-sm font-semibold text-gray-600">Team Check-ins</p>
+                <p className="text-3xl font-bold text-green-600 mt-1">{stats.checkedInTeams}</p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {stats.totalTeams > 0 ? Math.round((stats.checkedInTeams / stats.totalTeams) * 100) : 0}% complete
+                  <span className="font-semibold text-green-600">
+                    {stats.totalTeams > 0 ? Math.round((stats.checkedInTeams / stats.totalTeams) * 100) : 0}%
+                  </span> complete
                 </p>
+                <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                  <div
+                    className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full transition-all"
+                    style={{ width: `${stats.totalTeams > 0 ? (stats.checkedInTeams / stats.totalTeams) * 100 : 0}%` }}
+                  ></div>
+                </div>
               </div>
-              <div className="p-3 bg-green-100 rounded-lg">
-                <CheckCircle className="w-6 h-6 text-green-600" />
+              <div className="p-4 bg-gradient-to-br from-green-100 to-green-200 rounded-2xl">
+                <CheckCircle className="w-7 h-7 text-green-600" />
               </div>
             </div>
-          </Card>
+          </div>
 
-          <Card noTransform={true}>
+          <div className="bg-white rounded-3xl shadow-lg p-6 border-2 border-gray-100 hover:shadow-xl transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Members</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.totalMembers}</p>
+                <p className="text-sm font-semibold text-gray-600">Total Members</p>
+                <p className="text-3xl font-bold text-blue-600 mt-1">{stats.totalMembers}</p>
                 <p className="text-xs text-gray-500 mt-1">
                   Across all teams
                 </p>
               </div>
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Users className="w-6 h-6 text-blue-600" />
+              <div className="p-4 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl">
+                <Users className="w-7 h-7 text-blue-600" />
               </div>
             </div>
-          </Card>
+          </div>
 
-          <Card noTransform={true}>
+          <div className="bg-white rounded-3xl shadow-lg p-6 border-2 border-gray-100 hover:shadow-xl transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Member Check-ins</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.checkedInMembers}</p>
+                <p className="text-sm font-semibold text-gray-600">Member Check-ins</p>
+                <p className="text-3xl font-bold text-yellow-600 mt-1">{stats.checkedInMembers}</p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {stats.totalMembers > 0 ? Math.round((stats.checkedInMembers / stats.totalMembers) * 100) : 0}% complete
+                  <span className="font-semibold text-yellow-600">
+                    {stats.totalMembers > 0 ? Math.round((stats.checkedInMembers / stats.totalMembers) * 100) : 0}%
+                  </span> complete
                 </p>
+                <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                  <div
+                    className="bg-gradient-to-r from-yellow-500 to-orange-500 h-2 rounded-full transition-all"
+                    style={{ width: `${stats.totalMembers > 0 ? (stats.checkedInMembers / stats.totalMembers) * 100 : 0}%` }}
+                  ></div>
+                </div>
               </div>
-              <div className="p-3 bg-yellow-100 rounded-lg">
-                <BarChart3 className="w-6 h-6 text-yellow-600" />
+              <div className="p-4 bg-gradient-to-br from-yellow-100 to-orange-100 rounded-2xl">
+                <BarChart3 className="w-7 h-7 text-yellow-600" />
               </div>
             </div>
-          </Card>
+          </div>
         </div>
 
         {/* Filters and Actions */}
@@ -401,18 +420,24 @@ export default function CoordinatorDashboard() {
         </Card>
 
         {/* Permissions Info */}
-        <Card className="mb-6 bg-blue-50 border-blue-200" noTransform={true}>
-          <h3 className="text-sm font-semibold mb-2">Your Permissions:</h3>
-          <div className="flex flex-wrap gap-2 text-sm">
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-3xl shadow-lg p-6 border-2 border-blue-200 mb-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Shield className="w-5 h-5 text-blue-600" />
+            Your Coordinator Permissions
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {Object.entries(permissions).map(([key, value]) => (
               value && (
-                <Badge key={key} variant="info">
-                  {key.replace(/([A-Z])/g, ' $1').trim()}
-                </Badge>
+                <div key={key} className="bg-white rounded-xl p-3 border border-blue-200 flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                  <span className="text-sm font-medium text-gray-800">
+                    {key.replace(/([A-Z])/g, ' $1').trim().replace(/^can /, '')}
+                  </span>
+                </div>
               )
             ))}
           </div>
-        </Card>
+        </div>
 
         {/* Teams Table */}
         <Card className="overflow-hidden" noTransform={true}>
@@ -527,56 +552,81 @@ export default function CoordinatorDashboard() {
         >
           <div className="space-y-4">
             {/* Overall Progress */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-semibold text-gray-900">Check-in Progress</h4>
+            <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-5 rounded-2xl border-2 border-purple-200">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-bold text-gray-900 flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-purple-600" />
+                  Check-in Progress
+                </h4>
                 {selectedTeam && (() => {
                   const progress = getCheckInProgress(selectedTeam);
                   return (
-                    <Badge variant={progress.percentage === 100 ? 'success' : progress.percentage > 0 ? 'warning' : 'secondary'}>
+                    <div className={`px-4 py-2 rounded-xl font-bold ${
+                      progress.percentage === 100
+                        ? 'bg-green-100 text-green-700'
+                        : progress.percentage > 0
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : 'bg-gray-100 text-gray-700'
+                    }`}>
                       {progress.checkedIn}/{progress.total} Members
-                    </Badge>
+                    </div>
                   );
                 })()}
               </div>
               {selectedTeam && (() => {
                 const progress = getCheckInProgress(selectedTeam);
                 return (
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full ${progress.percentage === 100 ? 'bg-green-600' : progress.percentage > 0 ? 'bg-yellow-600' : 'bg-gray-400'}`}
-                      style={{ width: `${progress.percentage}%` }}
-                    ></div>
-                  </div>
+                  <>
+                    <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
+                      <div
+                        className={`h-3 rounded-full transition-all ${progress.percentage === 100 ? 'bg-gradient-to-r from-green-500 to-green-600' : progress.percentage > 0 ? 'bg-gradient-to-r from-yellow-500 to-orange-500' : 'bg-gray-400'}`}
+                        style={{ width: `${progress.percentage}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-sm text-gray-600 text-center font-semibold">
+                      {Math.round(progress.percentage)}% Complete
+                    </p>
+                  </>
                 );
               })()}
             </div>
 
             {/* Table Assignment Section */}
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <h4 className="font-semibold text-gray-900 mb-3">Table Assignment</h4>
+            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-5 rounded-2xl border-2 border-blue-200">
+              <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <TableIcon className="w-5 h-5 text-blue-600" />
+                Assign Table & Team Number
+              </h4>
               <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="Table Number"
-                  type="text"
-                  value={assignData.tableNumber}
-                  onChange={(e) => setAssignData({ ...assignData, tableNumber: e.target.value })}
-                  placeholder="e.g., 5"
-                />
-                <Input
-                  label="Team Number"
-                  type="text"
-                  value={assignData.teamNumber}
-                  onChange={(e) => setAssignData({ ...assignData, teamNumber: e.target.value })}
-                  placeholder="e.g., 42"
-                />
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Table Number</label>
+                  <input
+                    type="text"
+                    value={assignData.tableNumber}
+                    onChange={(e) => setAssignData({ ...assignData, tableNumber: e.target.value })}
+                    placeholder="e.g., 5"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Team Number</label>
+                  <input
+                    type="text"
+                    value={assignData.teamNumber}
+                    onChange={(e) => setAssignData({ ...assignData, teamNumber: e.target.value })}
+                    placeholder="e.g., 42"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-semibold"
+                  />
+                </div>
               </div>
               {(selectedTeam?.tableNumber || selectedTeam?.teamNumber) && (
-                <div className="mt-2 text-sm text-gray-600">
-                  Current:
-                  {selectedTeam.tableNumber && ` Table ${selectedTeam.tableNumber}`}
-                  {selectedTeam.tableNumber && selectedTeam.teamNumber && ', '}
-                  {selectedTeam.teamNumber && ` Team ${selectedTeam.teamNumber}`}
+                <div className="mt-3 p-3 bg-blue-100 rounded-xl">
+                  <p className="text-sm font-semibold text-blue-900">
+                    Current Assignment:
+                    {selectedTeam.tableNumber && ` Table ${selectedTeam.tableNumber}`}
+                    {selectedTeam.tableNumber && selectedTeam.teamNumber && ' • '}
+                    {selectedTeam.teamNumber && ` Team #${selectedTeam.teamNumber}`}
+                  </p>
                 </div>
               )}
             </div>

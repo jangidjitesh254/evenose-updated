@@ -297,13 +297,20 @@ exports.inviteCoordinator = async (req, res) => {
 
     console.log('✅ User found:', user.email);
 
-    // Check if user is already a participant in this hackathon (as leader or member)
+    // Check if user is already a participant in this hackathon (as leader or active member)
     const Team = require('../models/Team');
     const isParticipant = await Team.findOne({
       hackathon: hackathon._id,
       $or: [
         { leader: user._id },
-        { 'members.user': user._id, 'members.status': 'active' }
+        {
+          members: {
+            $elemMatch: {
+              user: user._id,
+              status: 'active'
+            }
+          }
+        }
       ]
     });
 
@@ -398,16 +405,77 @@ exports.inviteCoordinator = async (req, res) => {
 // @access  Private
 exports.acceptCoordinatorInvitation = async (req, res) => {
   try {
-    const { hackathonId } = req.body;
+    console.log('=== Accept Coordinator Invitation Debug ===');
+    console.log('Params:', req.params);
+    console.log('Body:', req.body);
+
+    // Support both old (hackathonId in body) and new (invitationId in params) formats
+    const invitationId = req.params.invitationId;
+    const hackathonId = req.body.hackathonId;
+
+    console.log('Invitation ID:', invitationId);
+    console.log('Hackathon ID:', hackathonId);
+
+    const user = await User.findById(req.user._id);
+    console.log('User coordinatorFor count:', user.coordinatorFor.length);
+
+    let coordination;
+
+    if (invitationId) {
+      // New format: find by invitation ID
+      console.log('Trying to find coordination by invitation ID...');
+      console.log('All coordination IDs:', user.coordinatorFor.map(c => c._id.toString()));
+
+      coordination = user.coordinatorFor.id(invitationId);
+      console.log('Found coordination by ID?', !!coordination);
+    } else if (hackathonId) {
+      // Legacy format: find by hackathon ID
+      console.log('Trying to find coordination by hackathon ID...');
+      coordination = user.coordinatorFor.find(
+        c => c.hackathon.toString() === hackathonId && c.status === 'pending'
+      );
+      console.log('Found coordination by hackathon?', !!coordination);
+    }
+
+    if (!coordination) {
+      console.log('❌ Invitation not found');
+      return res.status(404).json({
+        success: false,
+        message: 'Invitation not found'
+      });
+    }
+
+    console.log('Coordination status:', coordination.status);
+
+    if (coordination.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'This invitation has already been responded to'
+      });
+    }
+
+    const coordinationHackathonId = coordination.hackathon.toString();
+    console.log('Coordination hackathon ID:', coordinationHackathonId);
 
     // Check if user is already a participant in this hackathon
     const Team = require('../models/Team');
     const isParticipant = await Team.findOne({
-      hackathon: hackathonId,
-      members: req.user._id
+      hackathon: coordinationHackathonId,
+      $or: [
+        { leader: req.user._id },
+        {
+          members: {
+            $elemMatch: {
+              user: req.user._id,
+              status: 'active'
+            }
+          }
+        }
+      ]
     });
 
     if (isParticipant) {
+      console.log('❌ User is already a participant');
       return res.status(400).json({
         success: false,
         message: 'You are already a participant in this hackathon. Please leave your team first to accept this coordinator invitation.',
@@ -416,10 +484,49 @@ exports.acceptCoordinatorInvitation = async (req, res) => {
       });
     }
 
+    coordination.status = 'accepted';
+    coordination.acceptedAt = new Date();
+
+    // Add coordinator role if not present
+    if (!user.roles.includes('coordinator')) {
+      user.roles.push('coordinator');
+    }
+
+    await user.save();
+    console.log('✅ User saved with accepted coordination');
+
+    // Add to hackathon's coordinators list
+    const hackathon = await Hackathon.findById(coordinationHackathonId);
+    hackathon.coordinators.push({
+      user: user._id,
+      permissions: coordination.permissions,
+      addedAt: new Date()
+    });
+    await hackathon.save();
+    console.log('✅ Hackathon updated with new coordinator');
+
+    res.status(200).json({
+      success: true,
+      message: 'Coordinator invitation accepted'
+    });
+  } catch (error) {
+    console.error('❌ Accept invitation error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// @desc    Decline coordinator invitation
+// @route   POST /api/hackathons/coordinators/invitations/:invitationId/decline
+// @access  Private
+exports.declineCoordinatorInvitation = async (req, res) => {
+  try {
+    const { invitationId } = req.params;
+
     const user = await User.findById(req.user._id);
-    const coordination = user.coordinatorFor.find(
-      c => c.hackathon.toString() === hackathonId && c.status === 'pending'
-    );
+    const coordination = user.coordinatorFor.id(invitationId);
 
     if (!coordination) {
       return res.status(404).json({
@@ -428,28 +535,19 @@ exports.acceptCoordinatorInvitation = async (req, res) => {
       });
     }
 
-    coordination.status = 'accepted';
-    coordination.acceptedAt = new Date();
-    
-    // Add coordinator role if not present
-    if (!user.roles.includes('coordinator')) {
-      user.roles.push('coordinator');
+    if (coordination.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'This invitation has already been responded to'
+      });
     }
 
+    coordination.status = 'declined';
     await user.save();
-
-    // Add to hackathon's coordinators list
-    const hackathon = await Hackathon.findById(hackathonId);
-    hackathon.coordinators.push({
-      user: user._id,
-      permissions: coordination.permissions,
-      addedAt: new Date()
-    });
-    await hackathon.save();
 
     res.status(200).json({
       success: true,
-      message: 'Coordinator invitation accepted'
+      message: 'Coordinator invitation declined'
     });
   } catch (error) {
     res.status(500).json({

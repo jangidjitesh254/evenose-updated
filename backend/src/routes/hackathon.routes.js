@@ -10,6 +10,7 @@ const {
   getMyCoordinations,
   inviteCoordinator,
   acceptCoordinatorInvitation,
+  declineCoordinatorInvitation,
   updateCoordinatorPermissions,
   getCoordinators,
   removeCoordinator,
@@ -39,7 +40,10 @@ router.get('/', getHackathons);
 router.post('/', protect, createHackathon);
 router.get('/my/organized', protect, getMyHackathons);
 router.get('/my/coordinations', protect, getMyCoordinations);
-router.post('/coordinators/accept', protect, acceptCoordinatorInvitation);
+router.get('/coordinators/invitations', protect, getMyCoordinations); // Get coordinator invitations
+router.post('/coordinators/invitations/:invitationId/accept', protect, acceptCoordinatorInvitation);
+router.post('/coordinators/invitations/:invitationId/decline', protect, declineCoordinatorInvitation);
+router.post('/coordinators/accept', protect, acceptCoordinatorInvitation); // Legacy route
 router.post('/judges/accept/:token', protect, acceptJudgeInvitation);
 
 // Parameterized routes - come AFTER specific routes
